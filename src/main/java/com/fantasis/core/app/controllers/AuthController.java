@@ -7,13 +7,16 @@ import java.util.stream.Collectors;
 
 import javax.validation.Valid;
 
+import com.fantasis.core.app.models.applications.ApplicationSetting;
 import com.fantasis.core.app.models.users.ERole;
 import com.fantasis.core.app.models.users.Role;
 import com.fantasis.core.app.models.users.User;
+import com.fantasis.core.app.payload.request.ApplicationSettingRequest;
 import com.fantasis.core.app.payload.request.LoginRequest;
 import com.fantasis.core.app.payload.request.SignupRequest;
 import com.fantasis.core.app.payload.response.JwtResponse;
 import com.fantasis.core.app.payload.response.MessageResponse;
+import com.fantasis.core.app.repository.ApplicationSettingRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -41,6 +44,9 @@ public class AuthController {
 
 	@Autowired
 	UserRepository userRepository;
+
+	@Autowired
+	ApplicationSettingRepository applicationSettingRepository;
 
 	@Autowired
 	RoleRepository roleRepository;
@@ -125,5 +131,31 @@ public class AuthController {
 		userRepository.save(user);
 
 		return ResponseEntity.ok(new MessageResponse("User registered successfully!"));
+	}
+
+	@PostMapping("/setting")
+	public ResponseEntity<?> setting(@Valid @RequestBody ApplicationSettingRequest applicationSettingRequest) {
+		if (applicationSettingRepository.existsByUsername(applicationSettingRequest.getUsername())) {
+			return ResponseEntity
+					.badRequest()
+					.body(new MessageResponse("Error: Username is already taken!"));
+		}
+
+		if (applicationSettingRepository.existsByapplicationname(applicationSettingRequest.getApplicationname())) {
+			return ResponseEntity
+					.badRequest()
+					.body(new MessageResponse("Error: Applicationname is already in use!"));
+		}
+
+		// Create new user's account
+		ApplicationSetting applicationSetting = new ApplicationSetting(applicationSettingRequest.getApplicationname(),
+				applicationSettingRequest.getUserdefined(),
+				applicationSettingRequest.getDefaut(),
+				applicationSettingRequest.getUsername(),
+				encoder.encode(applicationSettingRequest.getPassword()));
+
+		applicationSettingRepository.save(applicationSetting);
+
+		return ResponseEntity.ok(new MessageResponse("applicationSetting registered successfully!"));
 	}
 }
